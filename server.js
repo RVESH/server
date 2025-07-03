@@ -1,0 +1,24 @@
+// server.js
+import dotenv from "dotenv";
+dotenv.config(); // This should be at the TOP, before using process.env
+
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import nftRoutes from "./routes/nftRoutes.js";
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+app.use(cors());
+app.use(express.json());
+
+app.use("/api/nft", nftRoutes);
+
+// ✅ MongoDB Connect
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {console.log("✅ MongoDB connected");
+    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+  })
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
