@@ -1,7 +1,7 @@
 // blockchain/contractInstance.js
 import { ethers } from "ethers";
 import dotenv from "dotenv";
-import contractABI from "./ContractABI.json"; // 🔁 Replace with correct path
+import contractABI from "./ContractABI.json" assert { type: "json" };
 
 dotenv.config();
 

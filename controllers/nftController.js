@@ -1,6 +1,6 @@
 // controllers/nftController.js
+import contract from "../blockchain/contractInstance.js";  // ✅ Connected Contract
 import NFT from "../models/nftModel.js";
-
 /**
  * @desc    Create a new NFT
  * @route   POST /api/nft/create
@@ -34,6 +34,24 @@ export const createNFT = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Create a new NFT
+ * @route   POST /api/nft/create
+ */
+// / Example: Transfer NFT Ownership
+export const transferNFT = async (req, res) => {
+  try {
+    const { fromAddress, toAddress, tokenId } = req.body;
+
+    const tx = await contract.transferFrom(fromAddress, toAddress, tokenId);
+    await tx.wait();
+
+    res.json({ success: true, message: "NFT transferred!", txHash: tx.hash });
+  } catch (err) {
+    console.error("❌ Transfer Error:", err);
+    res.status(500).json({ success: false, message: "Transaction failed", error: err.message });
+  }
+};
 /**
  * @desc    Get all NFTs
  * @route   GET /api/nft/all
