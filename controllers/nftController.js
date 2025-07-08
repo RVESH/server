@@ -1,60 +1,79 @@
 // controllers/nftController.js
-import contract from "../blockchain/contractInstance.js";  // ✅ Connected Contract
+import contract from "../blockchain/contractInstance.js";
 import NFT from "../models/nftModel.js";
-/**
- * @desc    Create a new NFT
- * @route   POST /api/nft/create
- */
-export const createNFT = async (req, res) => {
-  try {
-    const { title, description, image, price, owner } = req.body;
 
-    if (!title || !description || !image || !price || !owner) {
+/**
+ * ✅ Mint NFT (Blockchain + DB)
+ * @route POST /api/nft/mint
+ */
+export const mintNFT = async (req, res) => {
+  try {
+    const { title, description, image, price, owner, tokenId } = req.body;
+
+    if (!title || !description || !image || !price || !owner || !tokenId) {
       return res.status(400).json({
         success: false,
         message: "All fields are required",
       });
     }
 
+    // ✅ Blockchain Mint Example (Adjust according to your Contract Function)
+    const tx = await contract.mintNFT(owner, tokenId);  // ⚠️ Replace with your Contract Function
+    await tx.wait();
+
     const newNFT = new NFT({ title, description, image, price, owner });
     await newNFT.save();
 
     return res.status(201).json({
       success: true,
-      message: "NFT created successfully",
+      message: "NFT minted successfully on blockchain and saved to DB",
       data: newNFT,
+      txHash: tx.hash,
     });
   } catch (error) {
-    console.error("❌ Create NFT Error:", error);
+    console.error("❌ Mint NFT Error:", error);
     return res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Minting failed",
       error: error.message,
     });
   }
 };
 
 /**
- * @desc    Create a new NFT
- * @route   POST /api/nft/create
+ * ✅ Transfer NFT (Blockchain Only)
+ * @route POST /api/nft/transfer
  */
-// / Example: Transfer NFT Ownership
 export const transferNFT = async (req, res) => {
   try {
-    const { fromAddress, toAddress, tokenId } = req.body;
+    const { toAddress, tokenId } = req.body;
 
-    const tx = await contract.transferFrom(fromAddress, toAddress, tokenId);
+    // ✅ Transfer from Backend Wallet (Safer)
+    const tx = await contract.transferFrom(
+      process.env.BACKEND_WALLET_ADDRESS,  // 👈 Backend Wallet as Owner
+      toAddress,
+      tokenId
+    );
     await tx.wait();
 
-    res.json({ success: true, message: "NFT transferred!", txHash: tx.hash });
+    res.json({
+      success: true,
+      message: "NFT transferred successfully!",
+      txHash: tx.hash,
+    });
   } catch (err) {
-    console.error("❌ Transfer Error:", err);
-    res.status(500).json({ success: false, message: "Transaction failed", error: err.message });
+    console.error("❌ Transfer NFT Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Transfer failed",
+      error: err.message,
+    });
   }
 };
+
 /**
- * @desc    Get all NFTs
- * @route   GET /api/nft/all
+ * ✅ Get All NFTs (From DB)
+ * @route GET /api/nft/all
  */
 export const getAllNFTs = async (req, res) => {
   try {
@@ -74,8 +93,8 @@ export const getAllNFTs = async (req, res) => {
 };
 
 /**
- * @desc    Update NFT Owner after purchase
- * @route   PUT /api/nft/update-owner/:id
+ * ✅ Update Owner in DB (Optional)
+ * @route PUT /api/nft/update-owner/:id
  */
 export const updateOwner = async (req, res) => {
   try {
@@ -91,11 +110,14 @@ export const updateOwner = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Owner updated successfully",
+      message: "Owner updated in DB successfully",
       data: nft,
     });
   } catch (err) {
     console.error("❌ Update Owner Error:", err);
-    res.status(500).json({ success: false, error: "Failed to update owner" });
+    res.status(500).json({
+      success: false,
+      error: "Failed to update owner in DB",
+    });
   }
 };
