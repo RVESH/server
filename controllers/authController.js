@@ -5,18 +5,27 @@ import jwt from "jsonwebtoken";
 // ✅ Get nonce for wallet address
 export const getNonce = async (req, res) => {
   const { walletAddress } = req.body;
-  if (!walletAddress) return res.status(400).json({ message: "Wallet address required" });
 
-  let user = await User.findOne({ walletAddress });
+  if (!walletAddress) {
+    return res.status(400).json({ message: "Wallet address required" });
+  }
+
+  let user = await User.findOne({ wallet: walletAddress });
   if (!user) {
-    user = await User.create({ walletAddress });
+    user = await User.create({
+      wallet: walletAddress,
+      nonce: Math.floor(Math.random() * 1000000).toString()
+    });
   } else {
     user.nonce = Math.floor(Math.random() * 1000000).toString();
     await user.save();
   }
 
   res.json({ nonce: user.nonce });
+  console.log("Request Body:", req.body);
+
 };
+
 
 // ✅ Verify Signature & Login
 export const verifySignature = async (req, res) => {

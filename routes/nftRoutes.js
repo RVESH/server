@@ -1,21 +1,19 @@
 import express from "express";
 import authMiddleware from "../middlewares/authMiddleware.js";
 
-// ✅ Apply to all routes below:
-router.use(authMiddleware);
-
 import {
-  createNFT,
+  mintNFT,
   getAllNFTs,
-  updateOwner, // ✅ import added
-  transferNFT,  // ✅ Blockchain transfer added
-
+  updateOwner,
+  transferNFT,
 } from "../controllers/nftController.js";
 
 const router = express.Router();
 
+// ✅ Apply auth to all routes
+router.use(authMiddleware);
 
-// ✅ Validate NFT data middleware (optional for advanced safety)
+// ✅ Validate NFT data middleware
 const validateNFTData = (req, res, next) => {
   const { title, description, image, price, owner } = req.body;
   if (!title || !description || !image || !price || !owner) {
@@ -24,20 +22,10 @@ const validateNFTData = (req, res, next) => {
   next();
 };
 
-// @route   POST /api/nft/create
-// @desc    Create a new NFT
-router.post("/create", createNFT, validateNFTData);
-
-// @route   GET /api/nft/explore
-// @desc    Get all NFTs for explore page
-// ✅ Explore NFTs
+// ✅ Routes
+router.post("/create", validateNFTData, mintNFT);
 router.get("/explore", getAllNFTs);
-
-// @route   PUT /api/nft/update-owner/:id
-// @desc    Update NFT owner after purchase
-router.put("/update-owner/:id", updateOwner); // ✅ added
-
-// ✅ Transfer NFT on Blockchain (Secure Route Example)
+router.put("/update-owner/:id", updateOwner);
 router.post("/transfer", transferNFT);
 
 export default router;

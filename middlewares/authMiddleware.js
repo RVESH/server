@@ -1,16 +1,19 @@
 // /middlewares/authMiddleware.js
 
-// Dummy Auth Example (Replace with real JWT or Wallet Auth later)
-const authMiddleware = (req, res, next) => {
-  // Example: Check if backend wallet matches (you can improve later)
-  const backendWallet = process.env.BACKEND_WALLET_ADDRESS;
-  const { walletAddress } = req.body;
+import jwt from "jsonwebtoken";
 
-  if (!walletAddress || walletAddress !== backendWallet) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
+const protect = (req, res, next) => {
+  const token = req.headers.authorization;
+
+  if (!token) return res.status(401).json({ success: false, message: "No token, unauthorized" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    res.status(401).json({ success: false, message: "Invalid token" });
   }
-
-  next();
 };
 
-export default authMiddleware;
+export default protect;
