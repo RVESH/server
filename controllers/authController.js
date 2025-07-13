@@ -29,23 +29,38 @@ export const getNonce = async (req, res) => {
 
 // ✅ Verify Signature & Login
 export const verifySignature = async (req, res) => {
-  const { walletAddress, signature } = req.body;
-  if (!walletAddress || !signature) return res.status(400).json({ message: "Missing data" });
+  try {
+    const { walletAddress, signature } = req.body;
 
-  const user = await User.findOne({ walletAddress });
-  if (!user) return res.status(404).json({ message: "User not found" });
+    if (!walletAddress || !signature)
+      return res.status(400).json({ message: "Missing data" });
 
-  const message = `Sign this message: ${user.nonce}`;
-  const signerAddress = ethers.verifyMessage(message, signature);
+    const user = await User.findOne({ wallet: walletAddress }); // 👈 YEH SUDHAR!
 
-  if (signerAddress.toLowerCase() !== walletAddress.toLowerCase()) {
-    return res.status(401).json({ message: "Signature verification failed" });
+    if (!user)
+      return res.status(404).json({ message: "User not found" });
+
+    const message = `Sign this message: ${user.nonce}`;
+    const signerAddress = ethers.verifyMessage(message, signature);
+
+    if (signerAddress.toLowerCase() !== walletAddress.toLowerCase()) {
+      return res.status(401).json({ message: "Signature verification failed" });
+    }
+
+    // ✅ Update nonce
+    user.nonce = Math.floor(Math.random() * 1000000).toString();
+    await user.save();
+
+    const token = jwt.sign(
+      { id: user._id, walletAddress },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({ token, walletAddress });
+
+  } catch (error) {
+    console.error("❌ Verify Signature Error:", error); // ✅ AB ye chalega
+    res.status(500).json({ success: false, message: "Server Error" });
   }
-
-  user.nonce = Math.floor(Math.random() * 1000000).toString();
-  await user.save();
-
-  const token = jwt.sign({ id: user._id, walletAddress }, process.env.JWT_SECRET, { expiresIn: "1d" });
-
-  res.json({ token, walletAddress });
 };

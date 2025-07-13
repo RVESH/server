@@ -21,7 +21,6 @@ const validateNFTData = (req, res, next) => {
   }
   next();
 };
-
 // ✅ Routes
 router.post("/create", validateNFTData, mintNFT);
 router.get("/explore", getAllNFTs);

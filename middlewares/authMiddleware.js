@@ -15,5 +15,4 @@ const protect = (req, res, next) => {
     res.status(401).json({ success: false, message: "Invalid token" });
   }
 };
-
 export default protect;
