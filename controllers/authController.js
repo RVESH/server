@@ -4,27 +4,34 @@ import jwt from "jsonwebtoken";
 
 // ✅ Get nonce for wallet address
 export const getNonce = async (req, res) => {
-  const { walletAddress } = req.body;
+  try {
+    const walletAddress = req.query.wallet;  // ✅ this is for GET request
 
-  if (!walletAddress) {
-    return res.status(400).json({ message: "Wallet address required" });
+    if (!walletAddress) {
+      return res.status(400).json({ message: "Wallet address required" });
+    }
+
+    let user = await User.findOne({ wallet: walletAddress });
+
+    if (!user) {
+      user = await User.create({
+        wallet: walletAddress,
+        nonce: Math.floor(Math.random() * 1000000).toString()
+      });
+    } else {
+      user.nonce = Math.floor(Math.random() * 1000000).toString();
+      await user.save();
+    }
+
+    console.log("✅ Nonce generated:", user.nonce);
+    res.json({ success: true, nonce: user.nonce }); // success added
+
+  } catch (error) {
+    console.error("❌ GetNonce Error:", error);
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
   }
-
-  let user = await User.findOne({ wallet: walletAddress });
-  if (!user) {
-    user = await User.create({
-      wallet: walletAddress,
-      nonce: Math.floor(Math.random() * 1000000).toString()
-    });
-  } else {
-    user.nonce = Math.floor(Math.random() * 1000000).toString();
-    await user.save();
-  }
-
-  res.json({ nonce: user.nonce });
-  console.log("Request Body:", req.body);
-
 };
+
 
 
 // ✅ Verify Signature & Login
@@ -59,8 +66,13 @@ export const verifySignature = async (req, res) => {
 
     res.json({ token, walletAddress });
 
-  } catch (error) {
-    console.error("❌ Verify Signature Error:", error); // ✅ AB ye chalega
-    res.status(500).json({ success: false, message: "Server Error" });
-  }
+  }  catch (error) {
+  console.error("❌ Verify Signature Error:", error); // ✅ this is good
+  res.status(500).json({
+    success: false,
+    message: "Server Error",
+    error: error.message,  // 👈 Add this
+    stack: error.stack     // 👈 (optional) for full details
+  });
+}
 };

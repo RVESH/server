@@ -3,10 +3,10 @@ import { getNonce, verifySignature } from "../controllers/authController.js";
 
 const router = express.Router();
 
-// ✅ GET Nonce (Wallet Login)
-router.post("/nonce", getNonce);
+// ✅ Correct: Nonce route should be GET
+router.get("/nonce", getNonce);
 
-// ✅ Verify Signature
+// ✅ Signature verification
 router.post("/verify", verifySignature);
 
 export default router;
